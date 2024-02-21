@@ -58,7 +58,36 @@ gen_ifconfig() {
   awk -F "/" '{print "ifconfig eth0 inet6 add " $5 "/64"}' ${WORKDATA}
 }
 
-# Các hàm khác không cần thay đổi
+gen_proxy_file_for_user() {
+  awk -F "/" '{print $3 ":" $4 ":" $1 ":" $2 }' ${WORKDATA} > proxy.txt
+}
+
+upload_proxy() {
+  local PASS=$(random)
+  zip --password $PASS proxy.zip proxy.txt
+  URL=$(curl -s --upload-file proxy.zip https://transfer.sh/proxy.zip)
+
+  echo "Proxy is ready! Format IP:PORT:LOGIN:PASS"
+  echo "Download zip archive from: ${URL}"
+  echo "Password: ${PASS}"
+}
+
+install_jq() {
+  wget -O jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+  chmod +x ./jq
+  cp jq /usr/bin
+}
+
+upload_2file() {
+  local PASS=$(random)
+  zip --password $PASS proxy.zip proxy.txt
+  JSON=$(curl -F "file=@proxy.zip" https://file.io)
+  URL=$(echo "$JSON" | jq --raw-output '.link')
+
+  echo "Proxy is ready! Format IP:PORT:LOGIN:PASS"
+  echo "Download zip archive from: ${URL}"
+  echo "Password: ${PASS}"
+}
 
 echo "installing apps"
 yum -y install gcc net-tools bsdtar zip >/dev/null
@@ -88,7 +117,12 @@ chmod +x $WORKDIR/boot_*.sh /etc/rc.local
 
 gen_3proxy >/usr/local/etc/3proxy/3proxy.cfg
 
-# Các bước khác không cần thay đổi
+cat >>/etc/rc.local <<EOF
+bash ${WORKDIR}/boot_iptables.sh
+bash ${WORKDIR}/boot_ifconfig.sh
+ulimit -n 10048
+service 3proxy start
+EOF
 
 bash /etc/rc.local
 
