@@ -59,7 +59,7 @@ gen_ifconfig() {
 }
 
 gen_proxy_file_for_user() {
-  awk -F "/" '{print $3 ":" $4 ":" $1 ":" $2 }' ${WORKDATA} > proxy.txt
+  awk -F "/" '{print $3 ":" $4 }' ${WORKDATA} > proxy.txt
 }
 
 upload_proxy() {
