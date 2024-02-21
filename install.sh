@@ -44,6 +44,20 @@ $(awk -F "/" '{print \
 EOF
 }
 
+gen_data() {
+  seq $FIRST_PORT $LAST_PORT | while read port; do
+    echo "usr$(random)/pass$(random)/$IP4/$port/$(gen64 $IP6)"
+  done
+}
+
+gen_iptables() {
+  awk -F "/" '{print "iptables -I INPUT -p tcp --dport " $4 "  -m state --state NEW -j ACCEPT"}' ${WORKDATA}
+}
+
+gen_ifconfig() {
+  awk -F "/" '{print "ifconfig eth0 inet6 add " $5 "/64"}' ${WORKDATA}
+}
+
 # Các hàm khác không cần thay đổi
 
 echo "installing apps"
@@ -70,7 +84,7 @@ LAST_PORT=$(($FIRST_PORT + $COUNT))
 gen_data >$WORKDIR/data.txt
 gen_iptables >$WORKDIR/boot_iptables.sh
 gen_ifconfig >$WORKDIR/boot_ifconfig.sh
-chmod +x boot_*.sh /etc/rc.local
+chmod +x $WORKDIR/boot_*.sh /etc/rc.local
 
 gen_3proxy >/usr/local/etc/3proxy/3proxy.cfg
 
